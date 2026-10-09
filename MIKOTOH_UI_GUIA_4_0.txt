@@ -1,0 +1,769 @@
+MIKOTOH UI 4.4.0 — GUIA PARA EXECUTOR
+====================================
+
+1. ARQUIVOS
+
+O conteúdo desta entrega é a revisão 4.4.0. Os nomes com _4_0 foram
+mantidos para facilitar a substituição dos arquivos e preservar a URL.
+
+MIKOTOH_UI_4_0.lua
+    Biblioteca para colocar no seu GitHub. Retorna a tabela Library.
+
+MIKOTOH_UI_TESTE_EXECUTOR_4_0.lua
+    Teste completo e independente. Cole o arquivo inteiro no executor.
+    A biblioteca está embutida: não baixa a versão antiga do GitHub.
+    Abre em Farm / Auto Steal, com os controles da referência.
+    O botão redondo já começa com o ID 131620572368699 e 36 pixels.
+    "Anti Guard Panel" mostra/oculta o cartão original.
+    Clique no ícone de ovo do HUD para abrir o Steal Panel.
+    O Steal Panel usa a interface ActivePets do jogo e começa sem ovos
+    fictícios. Os dados devem ser fornecidos por seu próprio script.
+
+MIKOTOH_UI_GUIA_4_0.txt
+    Este guia.
+
+O destino é um executor no cliente Roblox. Não é um projeto de Roblox Studio.
+O executor precisa disponibilizar loadstring e acesso a gethui() ou CoreGui.
+O teste embutido não exige HttpGet. O carregamento pelo GitHub exige HttpGet.
+
+2. REFERÊNCIA E MUDANÇAS
+
+A janela e seus construtores visuais vêm da Chilli Library usada pelo
+script original. O Steal Panel e o cartão Anti Guard desta revisão foram
+adaptados diretamente do arquivo enviado: CHILLI_HUB (1).txt.
+
+Janela, cabeçalho, sombras, contornos, botões laterais, sliders, toggles,
+dropdowns, inputs, seções, parágrafos e canvas mantêm seu desenho original.
+O tema Original é o padrão. Há 18 temas; os outros temas alteram as cores
+mantendo o desenho, as sombras, as fontes e as paradas dos gradientes.
+
+A API não precisa do carregador externo, token ou sistema de chave.
+Os painéis contêm interface e callbacks; a lógica de jogo do arquivo
+original não foi incorporada. Não há limite artificial de cinco abas.
+Side="Right" permite abas à direita.
+
+Nesta revisão:
+- botão redondo isolado da escala da janela, com círculo 1:1 e diâmetro fixo;
+- anel de 1 pixel separado da imagem e fora da conversão de contornos da janela;
+- removidas do teste as páginas genéricas Controles, Listas, Conteúdo e Aparência;
+- Steal Panel começa fechado, abre pelo HUD e usa as transições do original;
+- correção da clonagem de modelos com Archivable=false, restaurando seus atributos;
+- retirada a versão genérica do painel de itens, suas mensagens e controles extras;
+- Steal Panel clonado de ActivePets.Frame, com os assets e fontes do jogo;
+- botão nativo do HUD clonado de PetsButton, mostrando o ícone do melhor ovo;
+- ações superiores originais: Auto Steal e Instant Steal;
+- cinco ordenações originais, botões Steal/estrela/setas/X e limite de 20 ovos;
+- cartão Anti Guard com tamanho, ícone, fontes, switch e acabamento originais;
+- toggle Anti Guard Panel criado automaticamente para mostrar/ocultar o cartão;
+- temas e cores individuais integrados aos dois painéis;
+- callbacks de interface separados dos estados visuais e sem ação automática de jogo.
+
+O botão livre compacto da janela permanece: imagem preenchendo o círculo,
+borda preta fina, arrasto suave com mouse/toque e proteção contra clique
+ao arrastar. Os valores dos sliders continuam mostrando somente o número
+ou o nome configurado, sem caixa preta cobrindo o texto.
+
+O Steal Panel original copia a interface que já existe no jogo. O arquivo
+não contém todos os assets dessa interface. Por isso esta revisão aguarda
+ActivePets.Frame ou um Template compatível; não cria uma aparência inventada
+quando o modelo está ausente. O cartão Anti Guard está inteiro no arquivo
+original e pode ser criado sem esses modelos. Os scripts são removidos das cópias. Ao abrir o Steal Panel, a coluna
+lateral do HUD se recolhe, como no original; ao fechar ou destruir, sua
+posição é restaurada. Os painéis nativos de pets/ovos não ficam sobrepostos
+ao Steal Panel. ManageHUD=false desliga somente o recolhimento da coluna.
+
+3. CARREGAR A BIBLIOTECA DO GITHUB
+
+Depois de enviar MIKOTOH_UI_4_0.lua à raiz da branch main do seu repositório:
+
+local url = "https://raw.githubusercontent.com/discordtiktok76-ctrl/MIKOTO-LIBRARY-UI/main/MIKOTOH_UI_4_0.lua"
+local source = game:HttpGet(url)
+local chunk, problem = loadstring(source)
+assert(chunk, problem)
+local Library = chunk()
+
+Se usar outra branch ou pasta, ajuste a URL. Esse endereço só terá a nova
+versão depois de você enviar o arquivo. O teste completo funciona antes disso.
+
+4. JANELA, ABAS E SEÇÕES
+
+local window = Library:CreateWindow({
+    Name = "Minha interface",
+    DefaultTab = "Principal",
+    Theme = "Original",
+    Visible = true,
+})
+
+local principal = window:GetDefaultTab()
+local section = principal:CreateSection({Name="Opções", Expanded=true})
+local segunda = window:CreateTab({Name="Itens"})
+local direita = window:CreateTab({Name="Informações", Side="Right"})
+
+window:SelectTab("Itens")
+window:Open()
+window:Close()
+window:ToggleVisible()
+window:IsOpen() -- estado atual da janela
+window:SetVisible(true)
+window:Finalize() -- abre e devolve a janela
+section:SetExpanded(false, false) -- segundo argumento: animar a transição
+section:Toggle()
+
+Uma Library gerencia uma janela de cada vez. CreateWindow novamente destrói
+a janela anterior. A aba inicial não pode ser destruída individualmente.
+Use tab:Destroy(), section:Destroy() ou window:Destroy() para limpar objetos.
+Os nomes devem ser únicos dentro de sua janela, aba ou seção correspondente.
+DisplayName altera o texto mostrado sem alterar o Name usado pela API.
+
+Controles também podem ser criados diretamente na aba ou janela. Nesse caso,
+a biblioteca cria uma seção "Controles" para organizar os componentes.
+
+5. CONTROLES BÁSICOS
+
+local toggle = section:CreateToggle({
+    Name="Ativar", Default=false, Note="Descrição opcional",
+    Callback=function(value) print(value) end,
+})
+
+local slider = section:CreateSlider({
+    Name="Velocidade", Min=0, Max=100, Default=25, Increment=1,
+    Callback=function(value) print(value) end,
+})
+
+local decimal = section:CreateSlider({
+    Name="Precisão", Min=0, Max=10, Default=2.5,
+    AllowDecimals=true, Decimals=2, Increment=0.25,
+})
+
+local input = section:CreateInput({
+    Name="Texto", Default="Olá", Placeholder="Digite aqui",
+    Callback=function(text) print(text) end,
+})
+
+local text = section:CreateText({Name="Status", Text="Pronto", Note="Nota"})
+local button = section:CreateButton({
+    Name="Executar", ButtonText="Testar", Note="Descrição",
+    Callback=function() text:Set("Funcionando", false) end,
+})
+
+toggle:Get()
+toggle:Set(true)        -- atualiza e executa callback
+toggle:Set(false,false) -- atualiza sem executar callback do usuário
+input:Set("Novo texto",false)
+text:Set("Novo status",false)
+button:Press()
+slider:GetRange()
+slider:SetRange(0,200)
+slider:SetMin(0)
+slider:SetMax(150)
+slider:SetDecimals(2)
+slider:SetIncrement(0.5)
+toggle:SetNote("Nova descrição")
+toggle:GetNote()
+
+CreateLabel é um alias de CreateText; CreateSwitch de CreateToggle;
+CreateSlidebar de CreateSlider. Description também pode ser usada como Note.
+Callbacks são chamados por tarefa; evite depender de sua conclusão imediata.
+
+Slider também oferece SetValueFormat(function(value) return tostring(value) end),
+SetValueParse(function(text) return tonumber(text) end), GetUnit, SetUnit,
+SetUnits, SetUnitEnabled, SetUnitSelectorEnabled, SetUnitFormat,
+SetUnitCallback, GetValueColors, SetValueColors e SetValueColorEnabled.
+Por padrão o valor mostra somente números ou o nome configurado, sem tags
+RichText e sem um fundo preto. Unidades/prefixos só aparecem se configurados.
+Use TextColor/SetTextColor para definir a cor das letras deste controle.
+ColorEnabled=true/SetValueColorEnabled(true) reativa a formatação RichText
+legada para unidades; mantenha-a desligada ao usar a cor unificada.
+
+6. SLIDER COM NOMES
+
+local quality = section:CreateTextSlider({
+    Name="Qualidade",
+    Values={"Baixa","Normal","Alta","Ultra"},
+    Default="Normal",
+    Callback=function(name) print("Selecionado:",name) end,
+})
+
+quality:Get()           -- "Normal"
+quality:GetIndex()      -- 2
+quality:Set("Ultra")
+quality:SetIndex(1,false)
+quality:GetLabels()     -- cópia da lista de nomes
+
+Labels ou Options podem substituir Values. CreateNamedSlider é um alias.
+São necessários pelo menos dois nomes. O estado guarda o nome selecionado.
+O campo aceita um nome válido e o arrasto percorre os nomes da lista.
+GetRange e demais ajustes numéricos não devem ser usados para mudar a lista.
+
+7. DROPDOWNS
+
+local dropdown = section:CreateDropdown({
+    Name="Item", Options={"Cristal","Espada","Escudo"}, Default="Cristal",
+    Callback=function(value) print(value) end,
+})
+local multi = section:CreateMultiDropdown({
+    Name="Raridades", Options={"Comum","Raro","Épico"}, Default={"Raro"},
+    Callback=function(values) print(table.concat(values,", ")) end,
+})
+
+dropdown:Set("Espada",false)
+dropdown:SetOptions({"Arco","Anel"},"Anel",false)
+multi:Set({"Comum","Épico"},false)
+
+CreateActionDropdown e CreateMultiActionDropdown mantêm a seleção até o
+usuário pressionar o botão de aplicar. Campos adicionais: ButtonText e Hint.
+Métodos adicionais: Apply(), SetHint(text), SetActionText(text).
+As listas usam a busca, expansão e visual de seleção da referência original.
+
+8. ESTADOS, VÍNCULOS E VISIBILIDADE
+
+local shared = window:CreateState({Name="Compartilhado",Default=false})
+local a = section:CreateToggle({Name="A",State=shared})
+local b = section:CreateToggle({Name="B",State=shared})
+a:Set(true) -- B acompanha o mesmo estado
+
+local connection = shared:Subscribe(function(value) print(value) end)
+shared:Get()
+shared:Set(false,false)
+connection:Disconnect()
+
+local group = window:CreateExclusiveGroup({
+    Name="Modo único", Members={a}, MaxActive=1, AllowNone=true,
+})
+-- Use toggles com estados diferentes como Members para escolha exclusiva.
+group:Add(outroToggle)
+group:Activate(outroToggle)
+group:GetActive()
+group:GetLimits() -- mínimo, máximo
+group:Remove(outroToggle)
+
+local extra = section:CreateInput({
+    Name="Detalhe",Default="",ShowWhen=a,
+})
+extra:SetVisible(false,false)
+extra:SetVisible(true,false)
+extra:IsVisible()
+
+ShowWhen aceita Toggle ou State. ShowWhenValue altera o valor esperado.
+VisibilityPredicate permite uma condição personalizada. SubOf=toggle cria
+uma opção subordinada visualmente. Set(...,false) ainda atualiza a interface
+e as dependências, mas não dispara callbacks do usuário.
+
+State e controles também oferecem Link, LinkWhenTrue, LinkWhenFalse,
+LinkWhen, LinkMany, LinkManyWhenTrue, Invert e Bind/TwoWay. As conexões
+retornadas oferecem Disconnect(). Controle:GetState() devolve seu estado.
+Controle:BindState(state) e ShareState(outroControle) vinculam valores.
+
+tab:SetSearchQuery("velocidade")
+tab:SetSearchQuery("") -- restaura a lista respeitando as dependências
+window:SetSearchQuery("texto") -- busca na aba selecionada
+
+9. TEMAS E CORES
+
+A revisão 4.4.0 usa cores definidas por camada para cada tema: corpo,
+placas, campos internos, base dos botões, brilho externo, brilho interno,
+seleção, preenchimentos e contornos. As posições dos gradientes, sombras,
+espessuras e transparências da referência original foram mantidas.
+Rose tem reflexos suaves; Dourado e Prata usam reflexos de metal; Preto
+e Marinho usam bases profundas. Os outros temas têm reflexos e contrastes
+específicos da sua cor. O texto mantém a fonte e o brilho branco originais.
+As paletas também são reaplicadas quando um controle recalcula seu layout,
+para evitar que um painel volte à cor antiga após uma atualização.
+
+Temas disponíveis:
+Original, Dark, Rose, Roxo, Verde, VermelhoEscuro, Azul, Preto, Lilas,
+Dourado, Ciano, Laranja, Turquesa, Magenta, Prata, Ambar, Marinho, Menta.
+Os oito adicionais são Ciano, Laranja, Turquesa, Magenta, Prata, Ambar,
+Marinho e Menta. "Vermelho" também aceita o tema VermelhoEscuro.
+
+window:SetTheme("Roxo")
+window:SetTheme("Original") -- restaura as cores da referência
+window:GetThemes()
+
+Cores aceitas: Color3, ColorSequence, "#RRGGBB", "#RGB",
+{255,100,100} ou lista de cores {"#FFFFFF","#AAAAAA"}.
+Uma ColorSequence permite posições precisas das paradas do gradiente.
+
+window:SetTextColor({"#FFFFFF","#FFD4E5"})
+window:SetTextStyle({Font=Enum.Font.GothamBold, Color="#FFFFFF", Rotation=90})
+window:ResetTextStyle()
+
+toggle:SetTextColor("#FFE066")                -- amarelo com o brilho original
+slider:SetTextColor("#7CF5AB")                -- só este slider fica verde
+toggle:SetTextColor({"#FFDD88","#FFAACC"}) -- gradiente personalizado deste controle
+toggle:ResetTextColor()                       -- restaura este controle
+toggle:SetColor("Note","#AABBCC")           -- uma parte pelo nome
+toggle:GetParts()                            -- instâncias visuais do controle
+
+window:SetComponentColor(window.Main,"#121826")
+window:SetComponentColor("Note",{"#FFFFFF","#BBBBDD"}) -- todas as notas
+window:SetComponentColor(toggle.Instance:FindFirstChild("Main"),
+    {"#302040","#151020"},{Property="BackgroundColor3",Rotation=90})
+
+window:SetComponentColor(umaStroke,{"#554466","#111122"})
+window:SetComponentColor(umaImagem,"#AABBCC",{Property="ImageColor3"})
+window:ResetComponentColor(window.Main)
+window:SetColors({Note="#CCDDEE"})
+
+SetComponentColor aceita uma Instance, nome de objeto ou seu GetFullName().
+Uma Instance identifica exatamente aquela parte. Um nome pode atingir várias.
+"Text" ou "AllText" seleciona textos. Property permite escolher qual cor
+editar quando um objeto possui mais de uma. Transparência e geometria podem
+ser editadas diretamente na Instance se necessário.
+
+A fonte inicial é a original. Textos que originalmente têm gradiente
+mantêm seu corte de brilho; textos lisos dos painéis continuam lisos.
+Uma cor simples tinge o brilho existente sem deslocar as
+paradas; uma lista/ColorSequence aplica o gradiente que você fornecer.
+Ao tingir uma parte que já tem gradiente, a cor simples também preserva
+as posições e a diferença de luminosidade das camadas desse gradiente.
+Notas mantêm sua transparência original. Não há animação de cores ou letras.
+
+Campos editáveis (TextBox), incluindo os valores dos sliders, usam texto
+nativo sempre visível. UIGradient não suporta TextBox; nesses campos, uma
+cor simples ou a primeira cor do gradiente é usada. Isso evita esconder o
+valor e preserva a edição por teclado. Labels, botões e informações do painel
+aceitam gradientes completos. Referência da API Roblox:
+https://create.roblox.com/docs/reference/engine/classes/UIGradient
+
+Cores particulares permanecem ao trocar o tema. ResetTextStyle limpa as
+personalizações de texto; ResetComponentColor remove a regra de uma parte.
+TextColor e Colors nos controles também podem definir as cores na criação:
+
+local colorido = section:CreateButton({
+    Name="Função amarela", ButtonText="Testar", TextColor="#FFE066",
+    Callback=function() print("Clique") end,
+})
+
+slider:SetColor("Value","#FFE066") -- somente o valor, sem mudar o título
+slider:SetColor("Label","#7CF5AB") -- somente o título
+
+GetParts() ajuda a localizar as instâncias pelo nome. Você também pode usar
+uma Instance exata em SetComponentColor para não atingir outras funções.
+Uma nova regra para o mesmo alvo substitui a regra anterior desse alvo.
+
+10. PARÁGRAFOS
+
+local paragraph = section:CreateParagraph({
+    Name="Descrição",Title="Informações",Text="Conteúdo do painel",
+})
+paragraph:SetTitle("Novo título")
+paragraph:Set("Novo conteúdo",false)
+paragraph:SetItems({{Title="Item",Text="Descrição"}})
+paragraph:SetSearchEnabled(true)
+paragraph:SetSearchQuery("Item")
+paragraph:SetStyle({TextScale=1,LineHeight=1.16})
+
+Outros métodos: GetTitle, GetStyle, SetHeader, SetGroups, AppendItem,
+GetSearchQuery, SetSpotlight, SetSelected e GetSelected.
+Itens e grupos são a opção para listas de informações; Canvas permite
+compor um painel livre. Para a lista no canto da tela, use CreateItemPanel.
+Library.Rich oferece Escape, Color, Bold, Italic, Muted, Rule e Join depois
+da criação da janela, para textos RichText que aceitam marcação.
+
+11. CANVAS
+
+local canvas = section:CreateCanvas({
+    Name="Painel",Title="Meu canvas",Style={MinLines=5},
+    Build=function(surface)
+        local text = surface:Text({Text="Olá",X=0,Y=0,Height=1})
+        surface:Bar({Alpha=0.65,X=0,Y=2,WidthScale=0.9,Height=0.3})
+        surface:Button({Text="Clique",X=0,Y=3,WidthScale=0.6,Height=1,
+            Callback=function() print("Clique no canvas") end})
+        surface:SetContentLines(5)
+        text.Set({Text="Texto atualizado"}) -- ponto, não dois-pontos
+    end,
+})
+
+Build recebe a Surface quando o tamanho do painel está pronto. Para
+reagir a redimensionamento, use surface:OnResize(function(api,width,unit)...end).
+X, Y, Width e Height são unidades da Surface. WidthScale e HeightScale são
+proporções. Position/Size com UDim2 também são aceitos.
+
+Surface: Frame, Text, Button, Image, Model, Bar, Dock, SetDock, Attach,
+Root, Scroll, Plate, Width, Unit, TextSize, LineHeight, Font, Metrics,
+SetContentHeight, SetContentLines, Invalidate, Clear, OnResize,
+SetStyle, GetStyle, SetTitle, SetSearchEnabled, SetSearchQuery e Query.
+Model aceita um template 3D; Spin=false desliga a rotação automática.
+
+canvas:GetSurface() devolve a Surface. Canvas também encaminha os métodos
+de criação/layout para ela. Elementos retornados usam ponto: element.Get(),
+element.Set({...}), element.SetVisible(true), element.Destroy().
+Não substitua Spec diretamente; use Set para solicitar atualização.
+
+12. STEAL PANEL ORIGINAL — ATÉ 20 OVOS
+
+CreateEggPanel cria uma cópia da interface original de ovos. O painel
+mantém a posição e o AnchorPoint do modelo. O tamanho padrão segue o
+script original: 0,3 da largura por 0,62 da altura, proporção 0,86, com
+ajuste para toque. A biblioteca não inventa uma janela arrastável nem uma
+posição no canto quando esses detalhes não existem no modelo original.
+
+Por padrão o painel começa fechado. Clique no ícone de ovo do HUD para
+abrir; o X fecha e devolve os botões do HUD à posição anterior.
+Show()/Hide() também controlam o painel. Enabled=true abre na criação.
+A entrada lateral usa 0,3 s com Back/Out e a saída 0,24 s com Quad/In,
+como no arquivo original. Animated=false aplica a visibilidade sem transição.
+
+O modelo procurado automaticamente é:
+    PlayerGui.ActivePets.Frame
+
+Ele precisa de Header, Close (botão), ScrollingFrame (rolagem) e
+ScrollingFrame.Template.Spacer, com TextLabel e Unequip (botão contendo
+Label ou TextLabel). Template=meuFrame permite fornecer esse modelo.
+Um Template explícito inválido é recusado.
+
+Sem o modelo, o handle continua válido e guarda os itens/estados, mas não
+monta uma interface substituta. IsReady() e IsVisible() retornam false.
+A biblioteca acompanha a criação da interface em PlayerGui e monta a cópia
+quando o modelo fica disponível. Show()/Enabled=true registra a intenção
+de mostrar; isso não cria os assets que faltam.
+
+local auto = section:CreateToggle({Name="Auto Steal", Default=false})
+local instant = section:CreateToggle({Name="Instant Steal", Default=false})
+
+local panel = window:CreateEggPanel({
+    Enabled=false,
+    AutoStealState=auto:GetState(),
+    InstantStealState=instant:GetState(),
+    Sort="Highest Value",
+    Items={
+        {Id="ovo_a", Name="Ovo A", Icon=123456,
+         Value=1500000, Weight=25, RarityNumber=4,
+         Details="x1.20  ·  25 Kg", State="Slot"},
+        {Id="ovo_b", Name="Ovo B", Icon=234567,
+         Value=500000, Weight=12, RarityNumber=2,
+         Details="Informação fornecida pelo seu script", State="Dropped"},
+    },
+    OnAction=function(item, panel)
+        print("Steal:", item:GetData().Name)
+    end,
+    OnPriority=function(item, panel) print("Prioritize:", item.Id) end,
+    OnCancel=function(item, panel) print("Cancel:", item.Id) end,
+    OnMove=function(item, delta, panel) print("Move:", item.Id, delta) end,
+    OnAutoSteal=function(value, panel) print("Auto Steal:", value) end,
+    OnInstantSteal=function(value, panel) print("Instant Steal:", value) end,
+    OnSort=function(mode, panel) print("Ordenação:", mode) end,
+})
+
+if panel:IsReady() then
+    panel:Show()
+end
+
+Troque os IDs de imagem e os dados de exemplo pelos seus. Valores numéricos
+recebem a formatação original de renda: 1500000 vira "$1.5M/s". Value também
+aceita um texto já formatado; nesse caso informe SortValue numérico para
+ordenar corretamente. Income pode ser usado no lugar de Value.
+Details aceita string ou lista de strings. Campos adicionais podem guardar
+referências próprias para seus callbacks.
+
+Style pode fornecer Name, Icon, RarityNumber, GradientColor e
+GradientRotation, seguindo os dados visuais do original. TextColor altera
+os textos da linha; NameColor, ValueColor e DetailsColor personalizam apenas
+um campo. A interface não consulta os módulos do jogo para gerar esses dados.
+
+BOTÕES ORIGINAIS E ESTADOS
+
+Os botões superiores são Auto Steal: OFF/ON e Instant Steal: OFF/ON, com as
+cores originais de desligado/ligado. Eles alteram estados de UI e chamam
+seus callbacks. Os estados podem ser compartilhados com os toggles da
+janela, como no exemplo. Sem estados fornecidos, a biblioteca os cria.
+
+panel:SetAutoSteal(true)
+panel:SetInstantSteal(false, false) -- atualiza UI sem callback do usuário
+panel.AutoStealState:Get()
+panel.InstantStealState:Get()
+
+O botão Sort alterna as cinco opções originais:
+    Best Rarity
+    Biggest Weight
+    Best Mutation
+    Highest Value
+    Lowest Value
+
+panel:GetSortModes() -- cópia da lista de opções
+panel:SetSort("Biggest Weight")
+
+Best Rarity usa RarityNumber; Biggest Weight usa Weight. As outras opções
+mantêm o critério de renda do original, crescente somente em Lowest Value.
+Os itens na fila visual ficam acima dos demais, seguindo a ordem fornecida.
+
+Steal, estrela, setas e X apenas chamam os callbacks correspondentes.
+A biblioteca não inicia Steal, não detecta ovos, não cria uma fila automática
+e não cancela ações do jogo. Esses comportamentos são definidos por seu script.
+OnAction/Callback, OnPriority, OnCancel e OnMove também podem ser definidos
+por item. OnMove recebe delta=-1 para subir ou delta=1 para descer.
+As setas nas extremidades não solicitam movimento fora da fila.
+
+Seu script informa a fila que deseja exibir:
+
+panel:SetQueue({"ovo_a", "ovo_b"}, "ovo_a") -- segundo argumento: item ativo
+panel:GetQueue() -- cópia da fila de handles
+panel:SetQueue({}) -- remove os indicadores da fila
+
+Na fila aparecem Rank (#1, #2...), setas e X. O primeiro item recebe a
+estrela destacada; o item ativo tem o Rank verde. Fora da fila, aparece o
+botão Steal. Clicar nesses botões não muda sozinho a ordem informada.
+Actions, AutoQueue, SetQueued, SetPriority e os botões genéricos Fila/Limpar
+fila da revisão anterior foram retirados para manter o sistema original.
+
+ITENS, VISIBILIDADE E LAYOUT
+
+local item = panel:AddItem({Id="ovo_c", Name="Ovo C", Icon=345678,
+    Value=2000000, Details="Informação do item"})
+item:SetInfo({Value=2500000, Details="Atualizado"})
+item:Update({Name="Outro nome"}) -- alias de SetInfo
+item:SetIcon(345678)
+item:GetData() -- cópia dos dados
+item:Press() -- solicita OnAction quando não está na fila
+item:RequestMove(-1) -- solicita OnMove se estiver na fila e puder subir
+item:SetTextColor({"#FFFFFF", "#FFD4E5"})
+item:SetInfo({NameColor="#FFE066", ValueColor="#7CF5AB"})
+item:SetColor("Value", {"#FFFFFF", "#7CF5AB"})
+item:Destroy() -- libera uma vaga
+
+panel:GetCount()
+panel:GetItems() -- cópia da lista de handles
+panel:GetItem("ovo_c")
+panel:Clear()
+panel:Show()
+panel:Hide()
+panel:Toggle()
+panel:SetEnabled(true)
+panel:IsEnabled() -- estado solicitado, mesmo aguardando um modelo
+panel:IsReady() -- modelo já montado
+panel:IsVisible() -- cópia realmente montada e visível
+panel:SetTitle("Steal Panel")
+panel:SetTextColor("#FFFFFF")
+panel:SetColor("Header", {"#FFC1C2", "#EF1C1C"}) -- quando já montado
+panel:SetLayout({Size=UDim2.fromScale(0.3,0.62)})
+panel:GetLayout()
+panel:Destroy()
+window:GetItemPanel() -- painel atual ou nil
+
+SetLayout aceita Size/Position (UDim2) e AnchorPoint (Vector2). A proporção
+original é mantida pelo UIAspectRatioConstraint do painel. Para manter o
+acabamento original, não é necessário configurar o layout.
+
+O X oculta a cópia. Fechar a janela principal não oculta o painel separado.
+Se o jogo abrir ActivePets ou GrowingEggs, o Steal Panel fecha para evitar
+sobreposição. Ao abri-lo novamente, esses dois painéis nativos são fechados.
+O painel continua usando somente lógica de interface.
+Um toggle existente pode ser vinculado com panel:BindToggle(toggle) ou
+Toggle=toggle na criação. O painel não cria esse toggle automaticamente;
+o launcher nativo já permite abrir/fechar a cópia.
+
+O launcher é clonado de:
+    PlayerGui.HUD.GameHUD.RightButtons.PetsButton
+
+Ele mantém o formato e os assets do HUD, recebe o gradiente original Chilli
+e ocupa o espaço acima de EggsButton. O ícone mostra o item de maior renda
+com State="Slot", State="Dropped" ou sem State. Clicar alterna o painel.
+Launcher=false não cria esse botão; LauncherTemplate=meuBotao permite
+fornecer seu modelo. O launcher depende desse segundo modelo, separado do
+Frame do painel. O botão livre da janela principal continua independente.
+
+O limite é 20 itens. IDs precisam ser únicos e não mudam em SetInfo.
+Icon/ImageId aceita número, string numérica ou URI Roblox de imagem.
+A biblioteca não converte Model em imagem nem cria ViewportFrame.
+Uma janela mantém um painel de ovos; chamar CreateEggPanel de novo retorna
+o mesmo handle. Destrua-o antes de criar outro modelo. CreateItemPanel,
+CreateStealPanel e CreateReviewPanel são aliases de CreateEggPanel.
+
+LISTA DINÂMICA E CORES
+
+panel:SetItems({
+    {Id="ovo_a", Name="Ovo A", Icon=123456, Value=1500000},
+    {Id="ovo_b", Name="Ovo B", Icon=234567, Value=500000},
+})
+
+SetItems reconcilia IDs: atualiza existentes, remove ausentes e cria novos.
+Campos omitidos de um item existente são mantidos. Para limpar um texto,
+envie "". Prefira IDs estáveis; sem Id/Uid, o ID vem da posição na lista.
+IDs repetidos e mais de 20 itens são recusados antes da alteração.
+
+Resolver=function(panel) return minhaListaDeOvos end e Interval=1 podem
+ser fornecidos na criação. O seu Resolver deve devolver até 20 tabelas:
+nil mantém a lista e {} limpa. A consulta periódica ocorre somente quando
+a cópia está montada e visível. Hide/Destroy encerram a consulta.
+Refresh() faz uma atualização manual, mesmo oculto. Não há duas consultas
+simultâneas do mesmo painel. A biblioteca não inclui detector de jogo.
+
+Os clones mantêm fonts/assets/sombras do modelo. As cores dos botões e as
+proporções das linhas seguem CHILLI_HUB (1).txt. Trocar o tema recolore a
+cópia e o launcher sem deslocar as paradas dos gradientes. Sombras de texto
+mantêm sua transparência/cor. Textos lisos continuam lisos; fontes nativas
+são preservadas até uma alteração explícita com SetTextStyle({Font=...}).
+As cores particulares de cada letra/componente continuam disponíveis.
+
+
+13. ANTI GUARD PANEL — CARTÃO ORIGINAL COM TOGGLE AUTOMÁTICO
+
+Uma chamada cria o cartão e o toggle de visibilidade na seção:
+
+local guard = section:CreateAntiGuardPanel({
+    Name="Anti Guard Panel", -- nome do toggle
+    Default=true,            -- cartão mostrado inicialmente, como no original
+    Value=false,             -- switch interno inicialmente desligado
+    Title="Anti Guard",
+    Brand="Chilli Hub",
+    Callback=function(value, panel)
+        print("Switch da interface:", value)
+        -- Seu script define o que deve acontecer com esse valor.
+    end,
+    OnVisibleChanged=function(visible, panel) print("Visível:", visible) end,
+})
+
+Default e Value são estados distintos: o primeiro mostra/oculta o cartão;
+o segundo representa o switch interno. Ativar Anti Guard Panel não ativa
+uma ação de jogo. O cartão não contém combate, proteção, teleporte, scans
+de personagens, remotes nem alterações no mapa.
+
+O visual replica o cartão construído no original: 226x52, cantos 14,
+ícone 36x36 com a imagem original, marca BuilderSansExtraBold, título
+GothamBlack e switch 42x22 com knob 16x16. A posição padrão fica centralizada
+na região inferior e se ajusta acima das barras de ferramentas. O mobile
+mantém a escala e as transparências originais. Esses tamanhos são a base
+antes do UIScale responsivo, assim como no arquivo original.
+
+guard.VisibilityToggle:Set(false) -- oculta usando o toggle criado
+guard.VisibilityToggle:Set(true, false) -- sincroniza sem callback do toggle
+guard.VisibilityToggle:Get()
+guard.VisibilityToggle.Panel -- referência para o próprio guard
+guard:Show()
+guard:Hide()
+guard:SetVisible(true)
+guard:IsVisible()
+guard:Set(true) -- altera o switch e chama Callback
+guard:Set(false, false) -- altera o visual sem chamar Callback
+guard:Get()
+guard:GetState() -- estado do switch, compartilhável com outros controles
+guard:SetTitle("Anti Guard")
+guard:SetBrand("Minha interface")
+guard:SetTextColor({"#FFFFFF", "#FFD4E5"})
+guard:SetColor("Title", "#FFE066")
+guard:SetPosition(UDim2.new(0.5,0,1,-120)) -- posição manual opcional
+guard:ResetPosition() -- retorna à posição automática
+guard:Destroy() -- também destrói toggle/estado criados pelo próprio painel
+
+Window e Tab também oferecem CreateAntiGuardPanel. Nesses casos, o toggle
+vai para uma seção de controles. Section/Tab/Window:CreatePanelToggle é um
+alias desse mesmo construtor. Uma janela mantém um cartão Anti Guard.
+
+State=estadoCompartilhado usa um estado existente para o switch interno.
+Toggle=toggleExistente reaproveita um controle de visibilidade em vez de
+criar outro. Esses objetos externos não são destruídos junto com o cartão.
+Icon permite trocar o ID da imagem; o padrão é o ID do arquivo original.
+TextColor permite personalizar todos os textos já na criação.
+
+O título liso e o gradiente da marca mantêm o acabamento original. Os temas
+recolorem superfícies, contornos, gradientes e switch sem mudar o desenho.
+As animações originais de entrada, toque e movimento do knob permanecem.
+A borda gira quando o switch está ligado; AnimateBorder=false desativa esse
+efeito. Não há animação de cor nas letras. Ocultar/destruir interrompe as
+atualizações de posição e da borda.
+
+14. ESCOLHER O BOTÃO DE ABRIR E FECHAR
+
+O botão lateral original permanece como padrão, com o acabamento original.
+Para escolhê-lo explicitamente:
+
+window:SetOpenButton({Mode="Original"})
+
+O botão livre é pequeno, circular e preenchido pela imagem. O padrão é
+36 pixels de diâmetro, borda preta de 1 pixel e nenhum fundo opaco adicional.
+Nesta revisão ele usa seu próprio ScreenGui, sem herdar o redimensionamento
+e a conversão de UIStroke da janela. O círculo mantém proporção 1:1 e
+restrições de tamanho iguais ao diâmetro escolhido. A imagem ocupa a área
+interna, descontando somente a borda; o anel fica em uma camada separada.
+
+window:SetOpenButton({
+    Mode="Free",
+    ImageId="131620572368699", -- troque pelo ID da SUA imagem
+    Size=36, -- diâmetro em pixels, entre 24 e 80
+    BorderColor="#000000",
+    BorderThickness=1, -- entre 0 e 3 pixels
+    Position=UDim2.new(0,30,0.5,0),
+    Draggable=true,
+})
+
+Também pode ser enviado como OpenButton={...} em Library:CreateWindow.
+ImageId aceita número, string numérica ou "rbxassetid://ID". Image também
+é alias. Formato inválido é recusado antes de trocar o modo. O carregamento
+real depende do tipo de asset e das permissões de imagem do Roblox.
+
+A imagem usa Crop, preenchendo toda a área circular. Pixels transparentes
+ou margens que já pertencem ao arquivo da imagem continuam presentes: use
+uma imagem sem margens para preenchimento total ou forneça ImageRectOffset
+e ImageRectSize (Vector2) para recortar a região útil desse asset. A library
+não detecta automaticamente as margens transparentes de uma imagem remota.
+
+window:SetOpenButton({Size=44})
+window:GetOpenButtonOptions()
+window:GetOpenButtonPosition()
+window:SetOpenButton({Mode="Original"})
+window:SetOpenButton({Mode="Free"}) -- reutiliza o ID e os ajustes anteriores
+
+BorderColor ainda aceita outras cores/gradientes quando você solicitar.
+BorderTransparency ajusta a transparência. As trocas de tema mantêm a borda
+preta padrão. A espessura fica em pixels e não aumenta ao redimensionar.
+
+Enabled=true/false também aceita Free/Original. Free precisa de um ImageId
+já configurado. Os dois launchers são mutuamente exclusivos. Arrastar não
+abre/fecha; um clique/toque sem arrasto alterna a janela. O arrasto preserva
+o ponto onde você pegou o botão, acompanha o movimento por quadros e ignora
+um segundo dedo. A posição fica dentro da tela. A atualização por quadros é
+desconectada assim que o movimento termina. O X principal continua fechando
+a janela. OpenButton é o ImageButton; OpenButtonHost contém posição/tamanho.
+OpenButtonGui é a tela separada; OpenButtonBorder é o contorno do anel.
+Destruir a janela também remove essa tela e suas conexões.
+
+Referências de propriedades do Roblox:
+https://create.roblox.com/docs/reference/engine/classes/ImageButton#ScaleType
+https://create.roblox.com/docs/reference/engine/classes/UIStroke#StrokeSizingMode
+
+15. VERIFICAÇÃO E SOLUÇÃO DE ERROS
+
+Biblioteca e teste completo foram compilados com Luau nos níveis O0, O1 e O2,
+incluindo a regressão do limite de 200 registradores locais. As verificações
+com objetos simulados cobrem controles, callbacks, estados, valores dos
+sliders, cores individuais, os 18 temas e sua restauração. Também cobrem o
+botão livre, borda fixa, arrasto com mouse/toque, o limite de 20 ovos,
+clonagem nativa sem scripts, modelos não arquiváveis, launcher, cinco ordenações, fila visual,
+botões somente com callbacks, montagem tardia, Resolver e limpeza.
+A revisão 4.4.0 também verifica a separação do botão redondo da janela,
+redimensionamento, troca de modos, abertura/fechamento rápido do painel,
+conflito com telas nativas e restauração da posição do HUD.
+Os nomes dos controles presentes no teste foram comparados com o arquivo
+original, para impedir a volta das páginas e controles genéricos.
+
+O cartão Anti Guard foi comparado com a estrutura visual do arquivo enviado:
+classes dos 24 objetos, tamanhos, ícone e textos originais. Os testes cobrem
+seu toggle automático, switch independente, fontes, tema, posicionamento
+sobre hotbar/Backpack, mobile e encerramento das atualizações ao ocultar ou
+destruir. O teste de executor incorpora exatamente a biblioteca entregue.
+
+Essas verificações não são uma execução visual em seu executor. A aparência
+real, o carregamento das imagens e a interação em seu celular ainda precisam
+ser conferidos com o teste completo. Não foi possível executar Roblox aqui.
+
+Se o painel de ovos não aparecer, confira panel:IsReady() e a presença de
+PlayerGui.ActivePets.Frame. Sem o modelo original não será criada uma
+janela genérica. Se o painel aparecer sem linhas, forneça Items, SetItems
+ou um Resolver: a biblioteca não incorpora o detector do script original.
+Se faltar o botão nativo no HUD, confira PetsButton e EggsButton ou forneça
+LauncherTemplate. O cartão Anti Guard não depende desses modelos.
+
+O erro "Out of local registers ... exceeded limit 200" foi tratado
+separando os construtores visuais, a instalação da API, extensões e exemplos
+em funções. Se aparecer, confirme que executou o arquivo inteiro de teste,
+sem juntar o código a um script com muitas variáveis locais. Não use o link
+da versão antiga para validar este pacote.
+
+Se o carregamento online retornar erro de sintaxe, confirme que a URL é
+raw.githubusercontent.com e que aponta para o arquivo Lua, não para HTML.
+Erro de acesso ao CoreGui/gethui indica uma restrição do executor.
+Para outro erro, registre a mensagem completa, linha e nome do arquivo.
+
+Os arquivos estão prontos para você enviar ao seu repositório. Esta entrega
+não publicou alterações no GitHub.
